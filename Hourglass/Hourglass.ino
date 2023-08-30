@@ -44,9 +44,19 @@ void setup() {
   mpu.calcGyroOffsets();
   Serial.println("Done.");
 
-  for (int i = 0; i <= 7; i++) {
+  // erstmaliges aufleuchten aller LEDs
+  for (int i = 0; i <= 15; i++) {
     matrix.setColumn(i, 0xff);
   }
+
+  // setzen der unteren 60 LEDs (weil 60sek/min)
+  for (int i = 8; i <= 15; i++) {    
+    matrix.setRow(i, 0xff);
+  }
+  matrix.setPoint(8, 7, false);
+  matrix.setPoint(8, 6, false);
+  matrix.setPoint(9, 7, false);
+  matrix.setPoint(9, 6, false);
 }
 
 void loop() {
