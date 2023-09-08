@@ -52,18 +52,17 @@ void setup() {
   for (int i = 8; i <= 15; i++) {    
     matrix.setColumn(i, 0xff);
   }
-  matrix.setPoint(7, 8, false);
-  matrix.setPoint(6, 8, false);
-  matrix.setPoint(7, 9, false);
-  matrix.setPoint(6, 9, false);
+  matrix.setPoint(7, 15, false);
+  matrix.setPoint(6, 15, false);
+  matrix.setPoint(7, 14, false);
+  matrix.setPoint(6, 14, false);
 }
-
-  
-
-  bool kopf = true;
-  int currX = 0; //X Koordinate die beschrieben werden soll
-  int currY = 0; //Y Koordinate die beschrieben werden soll
-  int state = 0;
+  bool kopf = true; //wird anhand der ausrichtung des Gyros bestimmt
+  int setzenX = 0; //X Koordinate die beschrieben werden soll
+  int setzenY = 0; //Y Koordinate die beschrieben werden soll
+  int entfernenX = 0; //X Koordinate die entfernt werden soll
+  int entfernenY = 0; //Y Koordinate die entfernt werden soll
+  int state = 0; //intervall für sekunden pro minute
 
      
 void loop() {
@@ -71,43 +70,92 @@ void loop() {
 
   Serial.print("X: " + String(mpu.getAngleX()));
   Serial.println("\tY: " + String(mpu.getAngleY()));
-  if (state == 60 & kopf){
-
-  }
-  else{
-// swap();
-// delay(100);
-// swap();
-// delay(100);
-
+    
   //Wert größer als die Möglichkeiten setzen 
-  currX = 8;
-  currY = 8;
-  
-  //niedrigsten freien Punkt suchen
-  for(int i=1; i<=8; i++){
-    for(int j=1; j<=8; j++){
-      if(matrix.getPoint(i-1, j-1)==false){
-        if(i*j < currX*currY){
-          currX = i;
-          currY = j;
+  setzenX = 8;
+  setzenY = 8;
+
+  entfernenX = 8;
+  entfernenY = 8;
+
+
+  if (state == 0){
+    swap();
+  } else if (state == 60){
+    kopf = false;
+  }
+
+  if (state < 60 & kopf){
+    for(int i=1; i<=8; i++){
+      for(int j=9; j<=16; j++){
+        if(matrix.getPoint(i-1, j-1)){
+          if(i*(j-8) < entfernenX*entfernenY){
+            entfernenX = i;
+            entfernenY = j-8;
+          }
         }
       }
     }
+
+    matrix.setPoint(entfernenX-1, entfernenY+7,false);
+
+
+    for(int i=1; i<=8; i++){
+      for(int j=1; j<=8; j++){
+        if(matrix.getPoint(i-1, j-1)==false){
+          if(i*j < setzenX*setzenY){
+            setzenX = i;
+            setzenY = j;
+          }
+        }
+      }
+    }
+    matrix.setPoint(setzenX-1, setzenY-1,true);
+    state++;
+  } else if (state > 0 & !kopf){
+   
+    //niedrigsten freien Punkt suchen
+    for(int i=1; i<=8; i++){
+      for(int j=1; j<=8; j++){
+        if(matrix.getPoint(i-1, j-1)){
+          if(i*j > entfernenX*entfernenY){
+            entfernenX = i;
+            entfernenY = j;
+          }
+        }
+      }
+    } 
+    matrix.setPoint(entfernenX-1, entfernenY-1, false);
+
+    for(int i=1; i<=8; i++){
+      for(int j=9; j<=16; j++){
+        if(matrix.getPoint(i-1, j-1)==false){
+          if(i*(j-8) > setzenX*setzenY){
+            setzenX = i;
+            setzenY = j-8;
+          }
+        }
+      }
+    }  
+  
+    matrix.setPoint(setzenX-1, setzenY+7, true);
+    Serial.println(setzenX);
+    Serial.println(setzenY);
+    state--;
   }
-  matrix.setPoint(currX-1, currY-1, true);
-  Serial.println(currX);
-  Serial.println(currY);
-  state++;
 
 
+// swap();
+// delay(100);
+// swap();
+// delay(100);
 
   delay(100);
   //0xff = HIGH; 0x00 = LOW
   //matrix.setRow(0, 0xff);
   //matrix.setPoint(3, 0, true);
   //matrix.setPoint(7, 9, true);
-  }
+
 }
 
 
