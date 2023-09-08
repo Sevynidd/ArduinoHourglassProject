@@ -75,10 +75,10 @@ void loop() {
 
   }
   else{
-swap();
-delay(100);
-swap();
-delay(100);
+// swap();
+// delay(100);
+// swap();
+// delay(100);
 
   //Wert größer als die Möglichkeiten setzen 
   currX = 8;
@@ -126,6 +126,22 @@ void swap(){
   for(int i=0;i<8;i++){
     for(int j=0;j<8;j++){
       matrix.setPoint(i,j, hilfsmatrix[i][j]);
+    }
+  }
+
+  for(int i=0;i<8;i++){
+    for(int j=8;j<16;j++){
+      if(matrix.getPoint(i,j)){
+        hilfsmatrix[7-i][7-(j-8)]= true;
+      }
+      else{
+        hilfsmatrix[7-i][7-(j-8)]= false;
+      }
+    }
+  }
+  for(int i=i;i<8;i++){
+    for(int j=0;j<8;j++){
+      matrix.setPoint(i,j+8, hilfsmatrix[i][j]);
     }
   }
 
