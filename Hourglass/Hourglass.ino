@@ -12,7 +12,7 @@ int mapMatrix1[8][8];
 int mapMatrix2[8][8];
 bool hilfsmatrix[8][8];
 
-bool kopf = true; //Wird anhand der Ausrichtung des Gyros bestimmt
+bool kopf = false; //Wird anhand der Ausrichtung des Gyros bestimmt
 int setzenX = 0; //X Koordinate die beschrieben werden soll
 int setzenY = 0; //Y Koordinate die beschrieben werden soll
 int entfernenX = 0; //X Koordinate die entfernt werden soll
@@ -57,24 +57,41 @@ void setup() {
      
 void loop() {
   mpu.update();
+  if(mpu.getAngleY()<0){
+    if(kopf==true){
+      swap();
+    }
+    kopf = false;
+  }
+  else{
+    if(kopf==false){
+      swap();
+    }
+    kopf = true;
+  }
 
   Serial.print("X: " + String(mpu.getAngleX()));
   Serial.println("\tY: " + String(mpu.getAngleY()));
     
   //Wert größer als die Möglichkeiten setzen
-  setzenX = 8;
-  setzenY = 8;
 
-  entfernenX = 8;
-  entfernenY = 8;
 
   if (state == 0) {
-    swap();
+    delay(100);
   } else if (state == 60) {
-    kopf = false;
+    delay(100);
   }
 
   if ((state < 60) & kopf) {
+
+    //Werte die auf jeden Fall überschrieben werden setzen, um vorbelegung zu entfernen
+    setzenX = 8;
+    setzenY = 8;
+    entfernenX = 8;
+    entfernenY = 8;
+
+    //die folgenden Koordinaten sind immer + 1, da sie für das Füllen der Matrix dann besser geeignet sind
+    //i-1 und j-1 sind die Koordinaten die entfernt werden
     for (int i=1; i<=8; i++) {
       for (int j=9; j<=16; j++) {
         if (matrix.getPoint(i-1, j-1)) {
@@ -88,6 +105,7 @@ void loop() {
 
     matrix.setPoint(entfernenX-1, entfernenY+7, false);
 
+//i-1 und j-1 sind die koordinaten, die hinzugefügt werden
     for (int i=1; i<=8; i++) {
       for (int j=1; j<=8; j++) {
         if (matrix.getPoint(i-1, j-1) == false) {
@@ -103,24 +121,31 @@ void loop() {
     state++;
 	
   } else if ((state > 0) & !kopf) {
-   
+    setzenX = 8;
+    setzenY = 8;
+
+    entfernenX = 8;
+    entfernenY = 8;
+
+
     //Niedrigsten freien Punkt suchen
     for (int i=1; i<=8; i++) {
       for (int j=1; j<=8; j++) {
         if (matrix.getPoint(i-1, j-1)) {
-          if ((i*j) > (entfernenX*entfernenY)) {
+          if ((i*j) < (entfernenX*entfernenY)) {
             entfernenX = i;
             entfernenY = j;
           }
         }
       }
     } 
+    //i-1 und j-1 sind die koordinaten, die hinzugefügt werden
     matrix.setPoint(entfernenX-1, entfernenY-1, false);
 
     for (int i=1; i<=8; i++) {
       for (int j=9; j<=16; j++) {
         if (matrix.getPoint(i-1, j-1) == false) {
-          if ((i*(j-8)) > (setzenX*setzenY)) {
+          if ((i*(j-8)) < (setzenX*setzenY)) {
             setzenX = i;
             setzenY = j-8;
           }
@@ -134,11 +159,6 @@ void loop() {
     state--;
   }
 
-
-// swap();
-// delay(100);
-// swap();
-// delay(100);
 
   delay(100);
   //0xff = HIGH; 0x00 = LOW
