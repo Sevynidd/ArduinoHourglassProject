@@ -56,7 +56,15 @@ void setup() {
 }
      
 void loop() {
+  //update des Gyros
   mpu.update();
+
+  //Ausgabe der Gyro-Werte auf dem Serial Monitor
+    Serial.print("X: " + String(mpu.getAngleX()));
+    Serial.println("\tY: " + String(mpu.getAngleY()));
+    
+
+  //Überprüfung der Richtung der Sanduhr
   if(mpu.getAngleY()<0){
     if(kopf==true){
       swap();
@@ -70,32 +78,21 @@ void loop() {
     kopf = true;
   }
 
-  Serial.print("X: " + String(mpu.getAngleX()));
-  Serial.println("\tY: " + String(mpu.getAngleY()));
-    
-  //Wert größer als die Möglichkeiten setzen
-
-
-  if (state == 0) {
-    delay(100);
-  } else if (state == 60) {
-    delay(100);
-  }
-
-  if ((state < 60) & kopf) {
-
     //Werte die auf jeden Fall überschrieben werden setzen, um vorbelegung zu entfernen
     setzenX = 8;
     setzenY = 8;
     entfernenX = 8;
     entfernenY = 8;
 
-    //die folgenden Koordinaten sind immer + 1, da sie für das Füllen der Matrix dann besser geeignet sind
-    //i-1 und j-1 sind die Koordinaten die entfernt werden
-    for (int i=1; i<=8; i++) {
-      for (int j=9; j<=16; j++) {
-        if (matrix.getPoint(i-1, j-1)) {
-          if ((i*(j-8)) < (entfernenX*entfernenY)) {
+//Teil der ausgeführt wird, wenn die Sanduhr auf dem Kopf steht und die maximalen Veränderungen noch nicht eingetreten sind
+  if ((state < 60) & kopf) {
+
+    //i und j sind die Koordinaten die überprüft werden
+    for (int i=0; i<8; i++) {
+      for (int j=8; j<16; j++) {
+        //suchen der leuchtenden LED mit dem geringsten Wert basierend auf der Multiplikation
+        if (matrix.getPoint(i, j)) {
+          if (((i+1)*(j-7)) < ((entfernenX+1)*(entfernenY+1))) {
             entfernenX = i;
             entfernenY = j-8;
           }
@@ -103,13 +100,14 @@ void loop() {
       }
     }
 
-    matrix.setPoint(entfernenX-1, entfernenY+7, false);
+    matrix.setPoint(entfernenX, entfernenY+8, false);
 
-//i-1 und j-1 sind die koordinaten, die hinzugefügt werden
-    for (int i=1; i<=8; i++) {
-      for (int j=1; j<=8; j++) {
-        if (matrix.getPoint(i-1, j-1) == false) {
-          if ((i*j) < (setzenX*setzenY)) {
+//i und j sind die koordinaten, die überprüft werden
+    for (int i=0; i<8; i++) {
+      for (int j=0; j<8; j++) {
+        //suchen der nicht leuchtenden LED mit dem geringsten Wert basierend auf der Multiplikation
+        if (matrix.getPoint(i, j) == false) {
+          if (((i+1)*(j+1)) < ((setzenX+1)*(setzenY+1))) {
             setzenX = i;
             setzenY = j;
           }
@@ -117,35 +115,35 @@ void loop() {
       }
     }
 	
-    matrix.setPoint(setzenX-1, setzenY-1, true);
+    matrix.setPoint(setzenX, setzenY, true);
+
+    //folgen des Zustands, damit die Schleifen nur begrenzt laufen
     state++;
 	
-  } else if ((state > 0) & !kopf) {
-    setzenX = 8;
-    setzenY = 8;
-
-    entfernenX = 8;
-    entfernenY = 8;
-
-
-    //Niedrigsten freien Punkt suchen
-    for (int i=1; i<=8; i++) {
-      for (int j=1; j<=8; j++) {
-        if (matrix.getPoint(i-1, j-1)) {
-          if ((i*j) < (entfernenX*entfernenY)) {
+  }
+  
+//Teil der ausgeführt wird, wenn die Sanduhr nicht auf dem Kopf steht und die maximalen Veränderungen noch nicht eingetreten sind
+  else if ((state > 0) & !kopf) {
+//i und j sind die koordinaten, die überprüft werden
+    for (int i=0; i<8; i++) {
+      for (int j=0; j<8; j++) {
+        //suchen der leuchtenden LED mit dem geringsten Wert basierend auf der Multiplikation
+        if (matrix.getPoint(i, j)) {
+          if (((i+1)*(j+1) < ((entfernenX+1)*(entfernenY+1)))) {
             entfernenX = i;
             entfernenY = j;
           }
         }
       }
     } 
-    //i-1 und j-1 sind die koordinaten, die hinzugefügt werden
-    matrix.setPoint(entfernenX-1, entfernenY-1, false);
+    matrix.setPoint(entfernenX, entfernenY, false);
 
-    for (int i=1; i<=8; i++) {
-      for (int j=9; j<=16; j++) {
-        if (matrix.getPoint(i-1, j-1) == false) {
-          if ((i*(j-8)) < (setzenX*setzenY)) {
+//i und j sind die koordinaten, die überprüft werden
+    for (int i=0; i<8; i++) {
+      for (int j=8; j<16; j++) {
+       //suchen der nicht leuchtenden LED mit dem geringsten Wert basierend auf der Multiplikation
+        if (matrix.getPoint(i, j) == false) {
+          if (((i+1)*(j-7)) < ((setzenX+1)*(setzenY+1))) {
             setzenX = i;
             setzenY = j-8;
           }
@@ -153,53 +151,58 @@ void loop() {
       }
     }  
   
-    matrix.setPoint(setzenX-1, setzenY+7, true);
-    Serial.println(setzenX);
-    Serial.println(setzenY);
+    matrix.setPoint(setzenX, setzenY+8, true);
+
+    //folgen des Zustands, damit die Schleifen nur begrenzt laufen
     state--;
   }
 
-
-  delay(100);
-  //0xff = HIGH; 0x00 = LOW
-  //matrix.setRow(0, 0xff);
-  //matrix.setPoint(3, 0, true);
-  //matrix.setPoint(7, 9, true);
+  //Zeitmesser
+  delay(1000);
 
 }
 
-
+//Funktion für das Fallen der Sandkörner in die Entgegengesetzte Richtung
 void swap() {
-  
+  //durchiterieren durch die 1. Matrix
   for (int i=0; i<8; i++) {
     for (int j=0; j<8; j++) {
+      //lesen eines Wertes der Matrix
       if (matrix.getPoint(i,j)) {
+        //setzen des true-Wertes auf dem entgegengesetzten Feld in einer Hilfsmatrix
         hilfsmatrix[7-i][7-j] = true;
       }
       else {
+        //setzen des false-Wertes auf dem entgegengesetzten Feld in einer Hilfsmatrix
         hilfsmatrix[7-i][7-j] = false;
       }
     }
   }
   
+  //schreiben der Hilfsmatrix in die originale 1.Matrix
   for (int i=0; i<8; i++) {
     for (int j=0; j<8; j++) {
       matrix.setPoint(i, j, hilfsmatrix[i][j]);
     }
   }
 
+  //durchiterieren durch die 2. Matrix
   for (int i=0; i<8; i++) {
     for (int j=8; j<16; j++) {
+       //lesen eines Wertes der Matrix
       if (matrix.getPoint(i,j)) {
+        //setzen des true-Wertes auf dem entgegengesetzten Feld in einer Hilfsmatrix
         hilfsmatrix[7-i][7-(j-8)] = true;
       }
       else {
+        //setzen des false-Wertes auf dem entgegengesetzten Feld in einer Hilfsmatrix
         hilfsmatrix[7-i][7-(j-8)] = false;
       }
     }
   }
   
-  for (int i=i; i<8; i++) {
+  //schreiben der Hilfsmatrix in die originale 2.Matrix
+  for (int i=0; i<8; i++) {
     for (int j=0; j<8; j++) {
       matrix.setPoint(i, j+8, hilfsmatrix[i][j]);
     }
