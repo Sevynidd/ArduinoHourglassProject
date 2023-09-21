@@ -23,9 +23,9 @@ MD_MAX72XX matrix = MD_MAX72XX(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEV
 
 //Gyro
 #include <Wire.h>
-#include <MPU6050_light.h>
+#include <Adafruit_MPU6050.h>
 
-MPU6050 mpu(Wire);
+Adafruit_MPU6050 mpu;
 
 void setup() {
   Serial.begin(9600);
@@ -46,26 +46,34 @@ void setup() {
   matrix.setPoint(6, 14, false);
 
   //Gyro
-  Wire.begin();
-  mpu.begin();
   Serial.println(F("Calculating gyro offset, do not move MPU6050"));
-  delay(100);
-  mpu.calcGyroOffsets();
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) {
+      delay(10);
+    }
+  }
+
   Serial.println("Done.");
+
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
+  delay(100);
   
 }
      
 void loop() {
-  //update des Gyros
-  mpu.update();
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
 
   //Ausgabe der Gyro-Werte auf dem Serial Monitor
-    Serial.print("X: " + String(mpu.getAngleX()));
-    Serial.println("\tY: " + String(mpu.getAngleY()));
+    Serial.print("X: " + String(a.acceleration.x));
+    Serial.println("\tY: " + String(a.acceleration.y));
     
 
   //Überprüfung der Richtung der Sanduhr
-  if(mpu.getAngleZ()<0){
+  if(a.acceleration.x<0){
     if(kopf==true){
       swap();
     }
