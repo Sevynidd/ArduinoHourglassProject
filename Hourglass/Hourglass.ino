@@ -65,7 +65,7 @@ void loop() {
     
 
   //Überprüfung der Richtung der Sanduhr
-  if(mpu.getAngleY()<0){
+  if(mpu.getAngleZ()<0){
     if(kopf==true){
       swap();
     }
