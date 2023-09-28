@@ -33,7 +33,7 @@ void setup() {
 
   //LED
   matrix.begin();
-  matrix.control(MD_MAX72XX::INTENSITY, 0.2);
+  matrix.control(MD_MAX72XX::INTENSITY, 3);
   matrix.clear();
   
   // Setzen der unteren 60 LEDs (weil 60sek/min)
